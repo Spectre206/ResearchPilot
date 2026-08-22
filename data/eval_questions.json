@@ -1,0 +1,62 @@
+[
+  {
+    "question": "What core operational problems in large-scale streaming platforms does the paper address?",
+    "expected_answer": "data drift, throughput degradation, partition imbalance, and cascading failures in large streaming platforms",
+    "relevant_pages": [0],
+    "relevant_sections": ["Abstract", "Introduction"]
+  },
+  {
+    "question": "What is the detect-diagnose-predict-decide-act-verify-learn loop, and how many stages does it have?",
+    "expected_answer": "a seven-stage closed-loop autonomous healing cycle (Detect, Diagnose, Predict, Decide, Act, Verify, Learn) that continuously drives self-healing in the streaming pipeline",
+    "relevant_pages": [5, 6],
+    "relevant_sections": ["4.4 Autonomous Healing Loop"]
+  },
+  {
+    "question": "What are the five layers of the proposed system architecture?",
+    "expected_answer": "Streaming Ingestion Layer, Distributed Processing Layer, AI Control Plane, Self-Healing Orchestration Engine, and Serving and Observability Layer",
+    "relevant_pages": [2, 3],
+    "relevant_sections": ["III. System Architecture and Design", "3.1 Five-Layer Architectural Framework"]
+  },
+  {
+    "question": "Which machine learning architectures power the anomaly detection engine, and what do they capture?",
+    "expected_answer": "a hybrid of graph neural networks (capturing spatial/topological relationships between operators, partitions, and resources) and transformer attention mechanisms (capturing temporal patterns across metric sequences)",
+    "relevant_pages": [5],
+    "relevant_sections": ["4.1 Anomaly Detection Engine"]
+  },
+  {
+    "question": "What role do LSTM networks play in the framework?",
+    "expected_answer": "LSTM-based predictive fault modeling forecasts future system degradation (queue build-up, latency growth, backpressure) with dedicated networks per disruption type and confidence intervals on projections",
+    "relevant_pages": [5, 6],
+    "relevant_sections": ["4.2 Predictive Fault Modeling"]
+  },
+  {
+    "question": "What remediation actions can the reinforcement learning decision engine choose from?",
+    "expected_answer": "dynamic resource scaling (horizontal expansion), workload migration, dataflow/traffic rerouting, and partition rebalancing",
+    "relevant_pages": [6],
+    "relevant_sections": ["4.3 Reinforcement Learning Decision Engine"]
+  },
+  {
+    "question": "How does the AI-native self-healing approach compare to prior fault tolerance approaches like policy-based systems and isolated ML anomaly detection?",
+    "expected_answer": "unlike static, isolated approaches (policy-based rules, rule-driven monitoring, static autoscaling, or standalone ML anomaly detection), the AI-native approach uses hybrid GNN+Transformer detection with autonomous remediation that is dynamically adaptive, workload-aware, and embedded directly in the control plane",
+    "relevant_pages": [2],
+    "relevant_sections": ["2.2 Existing Approaches to Fault Tolerance", "Table I"]
+  },
+  {
+    "question": "What metrics were used to evaluate the framework experimentally?",
+    "expected_answer": "downtime reduction, latency stability (processing delay variance), fault containment (spatial propagation boundaries), and resource utilization (throughput-to-cost ratio)",
+    "relevant_pages": [7],
+    "relevant_sections": ["5.1 Experimental Setup and Evaluation Metrics", "Table 4"]
+  },
+  {
+    "question": "What are the main limitations of the proposed self-healing system discussed by the authors?",
+    "expected_answer": "model drift under dynamic workloads, computational cost of continuous model refinement, poor sensitivity to unseen failure configurations, and the risk of the RL agent taking suboptimal actions while exploring more complex policies",
+    "relevant_pages": [8],
+    "relevant_sections": ["5.3 Limitations and Challenges"]
+  },
+  {
+    "question": "What future research directions does the paper propose?",
+    "expected_answer": "digital twin simulations for safe policy testing, federated learning for privacy-preserving distributed model training, multi-agent reinforcement learning for microservice-scale coordination, and explainable AI, transfer learning, and quantum-inspired optimization",
+    "relevant_pages": [8, 9],
+    "relevant_sections": ["5.4 Future Research Directions"]
+  }
+]

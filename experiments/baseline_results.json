@@ -1,0 +1,132 @@
+{
+  "average_recall_at_5": 0.6,
+  "average_precision_at_5": 0.26,
+  "average_mrr": 0.29500000000000004,
+  "average_answer_score": 3.1,
+  "per_question": [
+    {
+      "question": "What core operational problems in large-scale streaming platforms does the paper address?",
+      "relevant_pages": [
+        0
+      ],
+      "expected_answer": "data drift, throughput degradation, partition imbalance, and cascading failures in large streaming platforms",
+      "generated_answer": "Answer: The paper addresses core operational problems in large-scale streaming platforms such as data drift, throughput degradation, partition imbalance, cascading failures, fragmented fault management responses, inefficient resource allocation, rule-based alert systems generating excessive notifications, and static configurations failing to adapt to dynamic workloads.  \n\nEvidence:  \n[2] page 0 | section Unknown: \"common operational issues, such as data drift, throughput degradation, partition imbalance, and cascading failures, that impact availability and performance.\"  \n[3] page 2 | section Unknown: \"operational gaps separately. These schemes lack integrated intelligence at all stages of fault management, including surveillance, forecasting, decision synthesis, and execution. Streaming platforms are systems that continuously collect, aggregate, and process streamed data.\"  \n[5] page 1 | section Unknown: \"rule-based alert systems generate too many notifications for operations teams to handle, and automatically initiated responses to incidents introduce delays between detection and recovery. Static configuration methods cannot adapt to the continually changing workloads, while administrators with limited human resources cannot manage the increasing complexity of the streaming service's topology graph.\"",
+      "recall_at_5": 1,
+      "precision_at_5": 0.4,
+      "mrr": 0.5,
+      "answer_score": 3
+    },
+    {
+      "question": "What is the detect-diagnose-predict-decide-act-verify-learn loop, and how many stages does it have?",
+      "relevant_pages": [
+        5,
+        6
+      ],
+      "expected_answer": "a seven-stage closed-loop autonomous healing cycle (Detect, Diagnose, Predict, Decide, Act, Verify, Learn) that continuously drives self-healing in the streaming pipeline",
+      "generated_answer": "Answer: The detect-diagnose-predict-decide-act-verify-learn loop consists of seven stages: Detection, Diagnosis, Predict, Decide, Act, Verify, and Learn.  \nEvidence:  \n- [3] page 5 | section Unknown: \"The autonomous healing circuit creates a seven-stage operational loop: Detection, which continuously analyzes streaming telemetry data to identify anomalies... Verification\"  \n- [5] page 5 | section Unknown: \"Learn stage incorporates operational outcomes via conduits of model refinement...\"",
+      "recall_at_5": 1,
+      "precision_at_5": 0.8,
+      "mrr": 0.5,
+      "answer_score": 5
+    },
+    {
+      "question": "What are the five layers of the proposed system architecture?",
+      "relevant_pages": [
+        2,
+        3
+      ],
+      "expected_answer": "Streaming Ingestion Layer, Distributed Processing Layer, AI Control Plane, Self-Healing Orchestration Engine, and Serving and Observability Layer",
+      "generated_answer": "Answer: The five layers of the proposed system architecture are: ingestion layer, distributed computing layer, AI control plane, self-healing orchestration layer, and observability layer.  \nEvidence:  \n- [3 page 8 | section Unknown]: \"The architecture comprises five layers: ingestion layer, distributed computing layer, AI control plane, self-healing orchestration layer, and observability layer, guided by a seven-phase autonomous healing loop.\"",
+      "recall_at_5": 1,
+      "precision_at_5": 0.4,
+      "mrr": 1.0,
+      "answer_score": 3
+    },
+    {
+      "question": "Which machine learning architectures power the anomaly detection engine, and what do they capture?",
+      "relevant_pages": [
+        5
+      ],
+      "expected_answer": "a hybrid of graph neural networks (capturing spatial/topological relationships between operators, partitions, and resources) and transformer attention mechanisms (capturing temporal patterns across metric sequences)",
+      "generated_answer": "Answer: The anomaly detection engine uses graph neural networks and transformers, along with LSTM-based predictive fault modeling. The graph neural network captures metrics like operator throughput, buffer occupancy, checkpoint duration, and communication latency. The transformer captures subgraph highlights. The LSTM networks capture queue growth, latency distributions, backpressure patterns, and hardware health.  \n\nEvidence:  \n[1] page 4 | section Unknown: \"graph neural network and transformer attention protocols to detect anomalous behavior patterns across distributed streaming workloads\"  \n[5] page 0 | section Unknown: \"graph neural networks, transformers for hybrid anomaly detection, LSTM-based predictive fault modeling, and reinforcement learning-based agents that autonomously select the best remediation policy\"  \n[4] page 4 | section Unknown: \"operator throughput velocities, buffer saturation magnitudes, checkpoint finalization intervals, and inter-task transmission delays\"",
+      "recall_at_5": 0,
+      "precision_at_5": 0.0,
+      "mrr": 0,
+      "answer_score": 4
+    },
+    {
+      "question": "What role do LSTM networks play in the framework?",
+      "relevant_pages": [
+        5,
+        6
+      ],
+      "expected_answer": "LSTM-based predictive fault modeling forecasts future system degradation (queue build-up, latency growth, backpressure) with dedicated networks per disruption type and confidence intervals on projections",
+      "generated_answer": "Answer: LSTM networks play a critical role in predictive fault modeling and forecasting within the framework, enabling proactive anticipation of system disruptions. They are integrated into the architecture as part of hybrid GNN+Transformer models and are utilized to analyze long-time series data (e.g., queue growth, latency distributions, backpressure patterns) to forecast system states and future outcomes.  \n\nEvidence:  \n[1] page 4 | section Unknown: \"LSTM-based forecast modules analyze long time series data of queue build-ups, processing delay distributions, and backpressure distributions to forecast the next state of the infrastructure across customizable model.\"  \n[2] page 0 | section Unknown: \"LSTM-based predictive fault modeling\" is part of the end-to-end architecture.  \n[3] page 8 | section Unknown: \"LSTM-based forecasting modules are used to proactively anticipate and address potential disruptions.\"  \n[4] page 6 | section Unknown: \"LSTM Networks\" are part of the AI control plane and used for predictive fault modeling.  \n[5] page 5 | section Unknown: \"LSTM networks\" are used in projection modules for disrupting type prediction.",
+      "recall_at_5": 1,
+      "precision_at_5": 0.4,
+      "mrr": 0.25,
+      "answer_score": 3
+    },
+    {
+      "question": "What remediation actions can the reinforcement learning decision engine choose from?",
+      "relevant_pages": [
+        6
+      ],
+      "expected_answer": "dynamic resource scaling (horizontal expansion), workload migration, dataflow/traffic rerouting, and partition rebalancing",
+      "generated_answer": "Answer: The reinforcement learning decision engine can choose from remediation actions such as scaling, migration, rerouting, and rebalancing.  \nEvidence:  \n[2] page 8 | section Unknown: \"remediation action from scaling, migration, rerouting, and rebalancing to take to move the system towards its goals\"  \n[5] page 5 | section Unknown: \"a set of interventions, considering their costs and expected benefits [8]. The Decide stage synthesizes diagnosis and prognosis results to select the optimum remediation strategy from a set of interventions, considering their costs and expected benefits [8].\"",
+      "recall_at_5": 0,
+      "precision_at_5": 0.0,
+      "mrr": 0,
+      "answer_score": 3
+    },
+    {
+      "question": "How does the AI-native self-healing approach compare to prior fault tolerance approaches like policy-based systems and isolated ML anomaly detection?",
+      "relevant_pages": [
+        2
+      ],
+      "expected_answer": "unlike static, isolated approaches (policy-based rules, rule-driven monitoring, static autoscaling, or standalone ML anomaly detection), the AI-native approach uses hybrid GNN+Transformer detection with autonomous remediation that is dynamically adaptive, workload-aware, and embedded directly in the control plane",
+      "generated_answer": "Answer: The AI-native self-healing approach outperforms prior fault tolerance methods like policy-based systems and isolated ML anomaly detection by combining advanced detection (e.g., graph transformers, reinforcement learning), predictive modeling, and dynamic remediation. It integrates computational intelligence, continuous monitoring, and real-time decision synthesis, enabling adaptive, scalable, and resilient operations. In contrast, policy-based systems rely on static thresholds and predefined rules, while isolated ML anomaly detection is limited in adaptability and lacks integration with the control plane. The AI-native approach addresses gaps in existing frameworks by harmonizing detection, prediction, and automated remediation, offering greater flexibility and performance across high-throughput workloads.\n\nEvidence:\n- [1] page 8 | section Unknown: The AI-native architecture leverages embedded computational intelligence for anomaly detection, predictive fault modeling, and reinforcement learning-based decision synthesis.  \n- [2] page 3 | section Unknown: Self-healing pipelines use computational intelligence, prognostic models, and decision synthesis engines for continuous system health assessment.  \n- [4] page 7 | section Unknown: The AI-native approach integrates dynamic adaptability, continuous monitoring, and resource optimization, contrasting with static, isolated methods like policy-based systems and isolated ML anomaly detection.  \n- [5] page 2 | section Unknown: The AI-native approach combines dynamic high adaptability, embedded control plane, and real-time decision synthesis, addressing gaps in traditional frameworks.",
+      "recall_at_5": 1,
+      "precision_at_5": 0.2,
+      "mrr": 0.2,
+      "answer_score": 4
+    },
+    {
+      "question": "What metrics were used to evaluate the framework experimentally?",
+      "relevant_pages": [
+        7
+      ],
+      "expected_answer": "downtime reduction, latency stability (processing delay variance), fault containment (spatial propagation boundaries), and resource utilization (throughput-to-cost ratio)",
+      "generated_answer": "Answer: The experimental metrics included \"performance feedback,\" \"resource usage productivity,\" \"delay allocation telemetry,\" \"asset consumption trajectories,\" and \"event-magnitude processing throughput statistics.\"  \nEvidence:  \n[1] page 6 | section Unknown: \"performance feedback... key operational dimensions\" and \"resource usage productivity metric... throughput statistics.\"  \n[4] page 6 | section Unknown: \"delay allocation telemetry... asset consumption trajectories... event-magnitude processing throughput statistics.\"",
+      "recall_at_5": 0,
+      "precision_at_5": 0.0,
+      "mrr": 0,
+      "answer_score": 1
+    },
+    {
+      "question": "What are the main limitations of the proposed self-healing system discussed by the authors?",
+      "relevant_pages": [
+        8
+      ],
+      "expected_answer": "model drift under dynamic workloads, computational cost of continuous model refinement, poor sensitivity to unseen failure configurations, and the risk of the RL agent taking suboptimal actions while exploring more complex policies",
+      "generated_answer": "Answer: The main limitations of the proposed self-healing system discussed by the authors include (1) model drift in dynamic workloads, which complicates anomaly detection and prediction due to varying streaming applications, (2) strict latency requirements that limit recovery time and system responsiveness, and (3) the inadequacy of default repair mechanisms, as based repair is not viable for the system's architecture.  \n\nEvidence:  \n- [1] page 7 | section Unknown: \"Model drift in dynamic workloads is a critical challenge since streaming applications can vary considerably during their life cycles, impacting the ability to precisely recognize and predict anomalies, especially when the training data is different from the active environment.\"  \n- [5] page 1 | section Unknown: \"441 millisecond latency requirements are so strict that there is virtually no headroom for recovery time or latency of any kind.\"  \n- [4] page 8 | section Unknown: \"based repair as a default response is not viable.\"",
+      "recall_at_5": 1,
+      "precision_at_5": 0.4,
+      "mrr": 0.5,
+      "answer_score": 3
+    },
+    {
+      "question": "What future research directions does the paper propose?",
+      "relevant_pages": [
+        8,
+        9
+      ],
+      "expected_answer": "digital twin simulations for safe policy testing, federated learning for privacy-preserving distributed model training, multi-agent reinforcement learning for microservice-scale coordination, and explainable AI, transfer learning, and quantum-inspired optimization",
+      "generated_answer": "Answer: The paper proposes future research directions in areas such as advanced curriculum learning for adaptive systems, predictive analytics for infrastructure degradation, and digital twin simulations for protected policy analysis or disruption evaluation.  \n\nEvidence:  \n[1] page 7 | section Unknown: \"Future augmentations will propel autonomous streaming platforms further; digital twin simulations can be used for protected policy analysis or to evaluate disruption situations without having any impact on the production infrastructure [9].\"  \n[5] page 7 | section Unknown: \"Successfully balancing exploration needs with invariance requires advanced curriculum learning and safety constraints on exploration, at least in the initial phases where these invariances are being cultured.\"",
+      "recall_at_5": 0,
+      "precision_at_5": 0.0,
+      "mrr": 0,
+      "answer_score": 2
+    }
+  ]
+}
