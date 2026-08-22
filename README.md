@@ -53,17 +53,17 @@ python main.py data/raw/paper.pdf --mode pipeline
 
 ```mermaid
 flowchart TD
-    A[PDF] --> B[Text Extraction]
+    A[PDF] --> B[Text Extraction PyMuPDF]
     B --> C[Chunking]
     C --> D[Embeddings via Ollama]
     D --> E[(ChromaDB)]
     E --> F[Semantic Retrieval]
-    F --> G[LLM Answer]
-    G --> H[Research Agent]
+    F --> G[Research Agent]
+    G --> H[Analyst Agent]
     H --> I[Evidence Agent]
     I --> J[Critic Agent]
     J --> K[Report Agent]
-    K --> L[Final Response]
+    K --> L[Final Structured Response]
 ```
 ## Project Structure
 
