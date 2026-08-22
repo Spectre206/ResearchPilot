@@ -1,13 +1,61 @@
+import argparse
 import json
 from pathlib import Path
 
 from app.evaluation.retrieval_eval import evaluate_retrieval
 from app.evaluation.answer_eval import evaluate_answer
-from app.rag.rag_qa import ask   # simple RAG answer generator
+from app.rag.rag_qa import ask
+from app.rag.vector_store import search
+
+
+K = 5
+
+
+def inspect_retrieval(question):
+    """Print the top-k retrieved chunks for manual inspection."""
+    print(f"\n{'=' * 80}")
+    print(f"QUESTION: {question}")
+    print(f"{'=' * 80}")
+
+    results = search(question, k=K)
+
+    documents = results["documents"][0]
+    metadatas = results["metadatas"][0]
+    distances = results["distances"][0]
+
+    for rank, (doc, meta, dist) in enumerate(
+        zip(documents, metadatas, distances), 1
+    ):
+        page = meta.get("page", "Unknown")
+
+        print(f"\n--- Rank {rank} | Page {page} | Distance {dist:.3f} ---")
+        print(doc[:500].replace("\n", " "))
+
+    print()
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Evaluate ResearchPilot baseline RAG performance."
+    )
+
+    parser.add_argument(
+        "--inspect-failures",
+        action="store_true",
+        help="Print top-5 retrieved chunks for failed questions.",
+    )
+
+    parser.add_argument(
+        "--answer-threshold",
+        type=float,
+        default=3.0,
+        help="Inspect questions with answer score below this threshold.",
+    )
+
+    args = parser.parse_args()
+
     data_path = Path("data/eval_questions.json")
+
     if not data_path.exists():
         print(f"Evaluation data not found at {data_path}")
         return
@@ -15,13 +63,19 @@ def main():
     with open(data_path, "r", encoding="utf-8") as f:
         questions = json.load(f)
 
+    if not questions:
+        print("No evaluation questions found.")
+        return
+
     total_recall = 0
     total_precision = 0
     total_mrr = 0
     total_score = 0
+
     n = len(questions)
 
     per_question_results = []
+    failed_questions = []
 
     print(f"Evaluating {n} questions...\n")
 
@@ -30,8 +84,15 @@ def main():
         relevant_pages = q.get("relevant_pages", [])
         expected_answer = q.get("expected_answer", "")
 
-        # Retrieve and evaluate
-        retrieval_metrics = evaluate_retrieval(question, relevant_pages, k=5)
+        # ---------------------------------------------------------
+        # Retrieval evaluation
+        # ---------------------------------------------------------
+        retrieval_metrics = evaluate_retrieval(
+            question,
+            relevant_pages,
+            k=K,
+        )
+
         recall = retrieval_metrics["recall"]
         precision = retrieval_metrics["precision"]
         mrr = retrieval_metrics["mrr"]
@@ -40,21 +101,36 @@ def main():
         total_precision += precision
         total_mrr += mrr
 
-        # Generate answer (using simple RAG)
+        # ---------------------------------------------------------
+        # Answer generation
+        # ---------------------------------------------------------
         generated_answer = ask(question)
 
-        # Evaluate answer quality
-        answer_eval = evaluate_answer(question, expected_answer, generated_answer)
+        # ---------------------------------------------------------
+        # Answer evaluation
+        # ---------------------------------------------------------
+        answer_eval = evaluate_answer(
+            question,
+            expected_answer,
+            generated_answer,
+        )
+
         score = answer_eval["score"]
         total_score += score
 
         print(f"Q{i}: {question[:60]}...")
-        print(f"  Recall@{5}: {recall}, Precision@{5}: {precision:.2f}, MRR: {mrr:.2f}")
+        print(
+            f"  Recall@{K}: {recall:.2f}, "
+            f"Precision@{K}: {precision:.2f}, "
+            f"MRR: {mrr:.2f}"
+        )
         print(f"  Answer score: {score}/5")
         print(f"  Generated: {generated_answer[:100]}...\n")
 
-        # Store full per-question result for the baseline report
-        per_question_results.append({
+        # ---------------------------------------------------------
+        # Store complete result
+        # ---------------------------------------------------------
+        result = {
             "question": question,
             "relevant_pages": relevant_pages,
             "expected_answer": expected_answer,
@@ -63,27 +139,71 @@ def main():
             "precision_at_5": precision,
             "mrr": mrr,
             "answer_score": score,
-        })
+        }
+
+        per_question_results.append(result)
+
+        # ---------------------------------------------------------
+        # Identify questions worth manually inspecting
+        # ---------------------------------------------------------
+        if (
+            recall < 1.0
+            or mrr < 1.0
+            or score < args.answer_threshold
+        ):
+            failed_questions.append(result)
+
+    # -------------------------------------------------------------
+    # Overall results
+    # -------------------------------------------------------------
+    average_recall = total_recall / n
+    average_precision = total_precision / n
+    average_mrr = total_mrr / n
+    average_score = total_score / n
 
     print("\n=== Overall Results ===")
-    print(f"Average Recall@{5}: {total_recall/n:.2f}")
-    print(f"Average Precision@{5}: {total_precision/n:.2f}")
-    print(f"Average MRR: {total_mrr/n:.2f}")
-    print(f"Average Answer Score: {total_score/n:.2f}/5")
+    print(f"Average Recall@{K}: {average_recall:.2f}")
+    print(f"Average Precision@{K}: {average_precision:.2f}")
+    print(f"Average MRR: {average_mrr:.2f}")
+    print(f"Average Answer Score: {average_score:.2f}/5")
 
+    # -------------------------------------------------------------
+    # Manual retrieval inspection
+    # -------------------------------------------------------------
+    if args.inspect_failures:
+        print("\n")
+        print("=" * 80)
+        print("MANUAL RETRIEVAL INSPECTION")
+        print("=" * 80)
+
+        if not failed_questions:
+            print("\nNo failed/low-scoring questions found.")
+        else:
+            print(
+                f"\nInspecting {len(failed_questions)} "
+                "failed/low-scoring questions..."
+            )
+
+            for result in failed_questions:
+                inspect_retrieval(result["question"])
+
+    # -------------------------------------------------------------
     # Save results
+    # -------------------------------------------------------------
     results_summary = {
-        "average_recall_at_5": total_recall / n,
-        "average_precision_at_5": total_precision / n,
-        "average_mrr": total_mrr / n,
-        "average_answer_score": total_score / n,
+        "average_recall_at_5": average_recall,
+        "average_precision_at_5": average_precision,
+        "average_mrr": average_mrr,
+        "average_answer_score": average_score,
         "per_question": per_question_results,
     }
 
     output_path = Path("experiments/baseline_results.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(results_summary, f, indent=2)
+
     print(f"\nSaved baseline results to {output_path}")
 
 
