@@ -20,7 +20,7 @@
   {
     "question": "Which machine learning architectures power the anomaly detection engine, and what do they capture?",
     "expected_answer": "a hybrid of graph neural networks (capturing spatial/topological relationships between operators, partitions, and resources) and transformer attention mechanisms (capturing temporal patterns across metric sequences)",
-    "relevant_pages": [5],
+    "relevant_pages": [4, 5, 6],
     "relevant_sections": ["4.1 Anomaly Detection Engine"]
   },
   {
@@ -32,7 +32,7 @@
   {
     "question": "What remediation actions can the reinforcement learning decision engine choose from?",
     "expected_answer": "dynamic resource scaling (horizontal expansion), workload migration, dataflow/traffic rerouting, and partition rebalancing",
-    "relevant_pages": [6],
+    "relevant_pages": [5, 6, 8],
     "relevant_sections": ["4.3 Reinforcement Learning Decision Engine"]
   },
   {
@@ -44,7 +44,7 @@
   {
     "question": "What metrics were used to evaluate the framework experimentally?",
     "expected_answer": "downtime reduction, latency stability (processing delay variance), fault containment (spatial propagation boundaries), and resource utilization (throughput-to-cost ratio)",
-    "relevant_pages": [7],
+    "relevant_pages": [6, 7],
     "relevant_sections": ["5.1 Experimental Setup and Evaluation Metrics", "Table 4"]
   },
   {
@@ -56,7 +56,7 @@
   {
     "question": "What future research directions does the paper propose?",
     "expected_answer": "digital twin simulations for safe policy testing, federated learning for privacy-preserving distributed model training, multi-agent reinforcement learning for microservice-scale coordination, and explainable AI, transfer learning, and quantum-inspired optimization",
-    "relevant_pages": [8, 9],
+    "relevant_pages": [7, 8, 9],
     "relevant_sections": ["5.4 Future Research Directions"]
   }
 ]
