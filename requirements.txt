@@ -3,3 +3,4 @@ chromadb
 ollama
 streamlit
 pandas
+groq
