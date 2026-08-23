@@ -6,6 +6,7 @@ from app.evaluation.retrieval_eval import evaluate_retrieval
 from app.evaluation.answer_eval import evaluate_answer
 from app.rag.rag_qa import ask
 from app.rag.vector_store import search
+from app.agents.research_agent import run_full_pipeline   # new import
 
 
 K = 5
@@ -36,7 +37,15 @@ def inspect_retrieval(question):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Evaluate ResearchPilot baseline RAG performance."
+        description="Evaluate ResearchPilot performance."
+    )
+
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="rag",
+        choices=["rag", "pipeline"],
+        help="Answer generation mode: 'rag' (simple) or 'pipeline' (multi-agent).",
     )
 
     parser.add_argument(
@@ -67,6 +76,8 @@ def main():
         print("No evaluation questions found.")
         return
 
+    print(f"Evaluating {len(questions)} questions in '{args.mode}' mode...\n")
+
     total_recall = 0
     total_precision = 0
     total_mrr = 0
@@ -77,15 +88,13 @@ def main():
     per_question_results = []
     failed_questions = []
 
-    print(f"Evaluating {n} questions...\n")
-
     for i, q in enumerate(questions, 1):
         question = q["question"]
         relevant_pages = q.get("relevant_pages", [])
         expected_answer = q.get("expected_answer", "")
 
         # ---------------------------------------------------------
-        # Retrieval evaluation
+        # Retrieval evaluation (same for both modes)
         # ---------------------------------------------------------
         retrieval_metrics = evaluate_retrieval(
             question,
@@ -102,9 +111,13 @@ def main():
         total_mrr += mrr
 
         # ---------------------------------------------------------
-        # Answer generation
+        # Answer generation (depends on mode)
         # ---------------------------------------------------------
-        generated_answer = ask(question)
+        if args.mode == "pipeline":
+            pipeline_result = run_full_pipeline(question)
+            generated_answer = pipeline_result.get("answer", "")
+        else:
+            generated_answer = ask(question)
 
         # ---------------------------------------------------------
         # Answer evaluation
@@ -198,13 +211,13 @@ def main():
         "per_question": per_question_results,
     }
 
-    output_path = Path("experiments/baseline_results.json")
+    output_path = Path(f"experiments/baseline_{args.mode}.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(results_summary, f, indent=2)
 
-    print(f"\nSaved baseline results to {output_path}")
+    print(f"\nSaved results to {output_path}")
 
 
 if __name__ == "__main__":

@@ -58,11 +58,14 @@ def _generate_groq(prompt, model=None, system=None, format=None):
     kwargs = {
         "model": model,
         "messages": messages,
-        "temperature": 0.1,   # lower for more deterministic outputs
+        "temperature": 0.1,
     }
 
+    # For JSON mode, force the model to output plain JSON,
+    # not native function calls.
     if format == "json":
         kwargs["response_format"] = {"type": "json_object"}
+        
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -71,7 +74,7 @@ def _generate_groq(prompt, model=None, system=None, format=None):
             content = response.choices[0].message.content
 
             if content and content.strip():
-                # Strip any accidental <think> blocks (though not expected)
+                # Strip any accidental <think> blocks (not expected)
                 if "</think>" in content:
                     content = content.split("</think>")[-1].strip()
                 return content
@@ -85,6 +88,12 @@ def _generate_groq(prompt, model=None, system=None, format=None):
             # If JSON mode failed, retry without response_format
             if "json_validate_failed" in error_str and "response_format" in kwargs:
                 kwargs.pop("response_format", None)
+                continue
+
+            # If tool_choice caused an error, remove it and retry
+            if "tool_choice" in error_str and "tool_choice" in kwargs:
+                kwargs.pop("tool_choice", None)
+                kwargs.pop("tools", None)
                 continue
 
             if attempt == max_retries - 1:
