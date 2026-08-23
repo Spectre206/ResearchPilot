@@ -1,6 +1,30 @@
 import re
 from app.config import CHUNK_SIZE, CHUNK_OVERLAP
 
+def is_boilerplate(line: str) -> bool:
+    """
+    Return True if the line looks like a page header/footer or journal boilerplate.
+    """
+    line = line.strip()
+    if not line:
+        return True
+
+    # Common journal/author lines
+    boilerplate_patterns = [
+        r"JOURNAL OF INTERNATIONAL",
+        r"ISSN:",
+        r"VOL\s*\d+",
+        r"Yogesh Pugazhendhi",
+        r"Independent researcher",
+        r"Self-Healing AI-Native Real-Time Data Pipelines:",
+        r"Autonomous Resilience For Large-Scale Streaming Systems",
+        r"^\d{1,3}$",   # page number only
+    ]
+
+    for pattern in boilerplate_patterns:
+        if re.search(pattern, line, re.IGNORECASE):
+            return True
+    return False
 
 def get_section_from_toc(page_number: int, toc: list[dict]) -> str:
     """Return section title for a page, based on TOC."""
@@ -46,6 +70,7 @@ def chunk_pages(pages: list[dict], toc: list[dict] | None = None,
     """
     Paragraph-aware chunking:
     - Split text into paragraphs by double newlines.
+    - Filter out page headers/footers and journal boilerplate.
     - Merge paragraphs until reaching chunk_size.
     - Keep section metadata.
     """
@@ -73,9 +98,21 @@ def chunk_pages(pages: list[dict], toc: list[dict] | None = None,
         if len(paragraphs) == 1:
             paragraphs = [p.strip() for p in original_text.splitlines() if p.strip()]
 
-        current_chunk = ""
+        # --- Filter out boilerplate lines from each paragraph ---
+        clean_paragraphs = []
         for para in paragraphs:
-            # Clean paragraph whitespace (but keep internal newlines for structure)
+            lines = [l for l in para.splitlines() if not is_boilerplate(l)]
+            clean_para = " ".join(lines).strip()
+            if clean_para:
+                clean_paragraphs.append(clean_para)
+
+        # If everything was boilerplate, skip this page
+        if not clean_paragraphs:
+            continue
+
+        current_chunk = ""
+        for para in clean_paragraphs:
+            # Normalise spaces (but keep structure)
             para_clean = re.sub(r"[ \t]+", " ", para).strip()
 
             # If paragraph alone is larger than chunk_size, split it into sentences
@@ -147,7 +184,6 @@ def chunk_pages(pages: list[dict], toc: list[dict] | None = None,
                         else:
                             current_chunk = ""
                     else:
-                        # Should not happen, but if current_chunk empty and para > chunk_size handled above
                         current_chunk = para_clean
                 else:
                     current_chunk += ("\n\n" + para_clean) if current_chunk else para_clean
