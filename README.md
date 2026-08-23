@@ -25,7 +25,7 @@ An **evidence-grounded AI research assistant** that combines **Retrieval-Augment
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-username/ResearchPilot.git
+git clone https://github.com/Spectre206/ResearchPilot.git
 cd ResearchPilot
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
