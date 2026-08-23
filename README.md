@@ -1,63 +1,88 @@
 # ResearchPilot
 
-An evidence-grounded AI agent for research paper analysis.  
-Combines RAG, tool-using agents, and evidence verification with local LLMs.
+An **evidence-grounded AI research assistant** that combines **Retrieval-Augmented Generation (RAG)**, **tool-using agents**, and **multi-agent verification** to analyze academic papers locally or via Groq.
 
-## Features
+---
 
-- PDF ingestion (PyMuPDF)
-- Chunking with section detection (basic)
+## ✨ Features
+
+- PDF ingestion with PyMuPDF
+- Paragraph‑aware chunking with section detection
+- Boilerplate filtering to remove headers/footers
 - Embeddings via Ollama (`nomic-embed-text`)
 - Vector storage with ChromaDB
-- Semantic retrieval
-- Simple RAG Q&A
-- Tool-using Research Agent (`--mode agent`)
-- Full agentic pipeline: Research → Evidence → Critic → Report (`--mode pipeline`)
-- Evaluation utilities (coming)
+- Semantic retrieval (cosine similarity)
+- Two answer modes:
+  - **RAG Mode** – simple retrieval + LLM
+  - **Pipeline Mode** – multi‑agent workflow (Analyst → Evidence → Critic → Report)
+- Streamlit UI with dark theme and chat interface
+- Evaluation harness with baseline metrics
 
-## Setup
+---
 
-1. Clone the repo.
-2. Create virtual environment and install dependencies:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate   # Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-3. Install and run [Ollama](https://ollama.com).
-4. Pull required models:
-   ```bash
-   ollama pull qwen3:1.7b
-   ollama pull nomic-embed-text
-   ```
-   (Optional) For model comparison:
-   ```bash
-   ollama pull phi4-mini
-   ```
-5. Place a PDF in `data/raw/`.
+## 🚀 Quickstart
 
-## Usage
+### 1. Clone and install
 
 ```bash
-# Simple RAG (default)
-python main.py data/raw/paper.pdf
-
-# Agent mode (tool-using)
-python main.py data/raw/paper.pdf --mode agent
-
-# Full pipeline (agents + critic)
-python main.py data/raw/paper.pdf --mode pipeline
+git clone https://github.com/your-username/ResearchPilot.git
+cd ResearchPilot
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-## Architecture
+### 2. Set up environment
+
+Create a `.env` file in the project root:
+
+```text
+GROQ_API_KEY=your-groq-api-key
+MODEL_PROVIDER=groq
+```
+
+If you prefer local Ollama, set `MODEL_PROVIDER=ollama` and ensure Ollama is running.
+
+### 3. Pull embedding model (Ollama)
+
+```bash
+ollama pull nomic-embed-text
+```
+
+### 4. Run Streamlit UI
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Upload a PDF, choose a mode, and ask questions.
+
+---
+
+## 🧭 Architecture
+
+### RAG Mode
 
 ```mermaid
 flowchart TD
-    A[PDF] --> B[Text Extraction PyMuPDF]
+    A[PDF] --> B[Text Extraction]
     B --> C[Chunking]
     C --> D[Embeddings via Ollama]
     D --> E[(ChromaDB)]
     E --> F[Semantic Retrieval]
+    F --> G[LLM Answer]
+    G --> H[Final Response with Evidence]
+```
+
+### Pipeline Mode
+
+```mermaid
+flowchart TD
+    A[PDF] --> B[Text Extraction]
+    B --> C[Chunking]
+    C --> D[Embeddings via Ollama]
+    D --> E[(ChromaDB)]
+    E --> F[Question + Retrieval]
     F --> G[Research Agent]
     G --> H[Analyst Agent]
     H --> I[Evidence Agent]
@@ -65,43 +90,91 @@ flowchart TD
     J --> K[Report Agent]
     K --> L[Final Structured Response]
 ```
-## Project Structure
+
+---
+
+## 📊 Baseline Results
+
+| Metric | RAG Mode | Pipeline Mode |
+|--------|----------|---------------|
+| Recall@5 | 1.00 | 1.00 |
+| Precision@5 | 0.52 | 0.52 |
+| MRR | 0.853 | 0.853 |
+| Answer Score | 4.0 | 3.7 |
+
+> The pipeline adds verification but may produce slightly lower scores because the critic sometimes removes valid details. Future tuning will improve this.
+
+---
+
+## 🗂️ Project Structure
 
 ```
 ResearchPilot/
 ├── app/
 │   ├── agents/
-│   │   ├── research_agent.py      # Orchestrator, tool-using loop
-│   │   ├── analyst_agent.py       # Drafts answer from evidence
-│   │   ├── evidence_agent.py      # Retrieves supporting evidence
-│   │   ├── critic_agent.py        # Verifies answer against evidence
-│   │   └── report_agent.py        # Formats final report
-│   ├── tools/
-│   │   ├── retrieval.py           # search_paper() tool
-│   │   ├── paper_search.py        # (placeholder)
-│   │   └── evidence.py            # (placeholder)
-│   ├── rag/
-│   │   ├── ingestion.py           # PDF text extraction
-│   │   ├── chunking.py            # Text chunking
-│   │   ├── embeddings.py          # Optional wrapper (currently unused)
-│   │   ├── vector_store.py        # ChromaDB integration
-│   │   └── rag_qa.py              # Simple RAG Q&A
-│   ├── llm/
-│   │   ├── client.py              # Ollama LLM client
-│   │   └── prompts.py             # Prompt templates
+│   │   ├── analyst_agent.py
+│   │   ├── critic_agent.py
+│   │   ├── evidence_agent.py
+│   │   ├── report_agent.py
+│   │   └── research_agent.py
 │   ├── evaluation/
-│   │   ├── retrieval_eval.py      # (placeholder)
-│   │   └── answer_eval.py         # (placeholder)
-│   └── config.py                  # Configuration
+│   │   ├── answer_eval.py
+│   │   └── retrieval_eval.py
+│   ├── llm/
+│   │   ├── client.py
+│   │   └── prompts.py
+│   ├── rag/
+│   │   ├── chunking.py
+│   │   ├── ingestion.py
+│   │   ├── rag_qa.py
+│   │   └── vector_store.py
+│   ├── tools/
+│   │   └── retrieval.py
+│   └── config.py
 ├── data/
-│   ├── raw/                       # Input PDFs
-│   ├── processed/                 # Processed data (if any)
-│   └── chroma/                    # ChromaDB persistent storage (ignored by git)
-├── tests/                         # Unit tests (to be added)
-├── experiments/                   # Experimental scripts
+│   ├── raw/            # input PDFs
+│   ├── processed/
+│   └── chroma/         # vector DB (ignored by git)
+├── experiments/        # evaluation results
+├── docs/               # detailed architecture docs
+├── streamlit_app.py    # UI
+├── main.py             # CLI
+├── evaluate.py         # evaluation harness
 ├── requirements.txt
 ├── README.md
-└── main.py                        # CLI entry point
+└── .gitignore
 ```
 
-> **Note:** Some files (`paper_search.py`, `evidence.py`, `retrieval_eval.py`, `answer_eval.py`, `embeddings.py`) are placeholders created from the original spec and are not yet fully implemented. They will be populated in future iterations.
+---
+
+## 🔧 Configuration
+
+- **LLM Provider:** Groq (`openai/gpt-oss-20b`) or Ollama (`qwen3:1.7b`)
+- **Embedding Model:** Ollama (`nomic-embed-text`)
+- **Vector DB:** ChromaDB (persistent)
+- **Chunk Size:** 500 (adjustable in `app/config.py`)
+
+---
+
+## 📚 Documentation
+
+For more details on the system architecture and agent workflow, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+---
+
+## 🧪 Evaluation
+
+Run the evaluation harness:
+
+```bash
+python evaluate.py --mode rag
+python evaluate.py --mode pipeline
+```
+
+Results are saved to `experiments/baseline_{mode}.json`.
+
+---
+
+## 📝 License
+
+MIT
