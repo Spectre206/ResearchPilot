@@ -22,7 +22,7 @@ def format_evidence(chunks) -> str:
         )
     return "\n\n".join(lines)
 
-def ask(question: str, k: int = 5) -> str:
+def ask(question: str, k: int = 8) -> str:
     results = search(question, k=k)
     chunks = []
     for doc, meta, dist in zip(

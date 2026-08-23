@@ -20,7 +20,7 @@ EMBEDDING_MODEL_NAME = "nomic-embed-text"
 
 # Groq settings
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL_NAME = "qwen/qwen3.6-27b"
+GROQ_MODEL_NAME = "openai/gpt-oss-20b"
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
