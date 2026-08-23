@@ -4,14 +4,17 @@ from pathlib import Path
 
 from app.rag.ingestion import extract_pdf
 from app.rag.chunking import chunk_pages
-from app.rag.vector_store import add_chunks
+from app.rag.vector_store import add_chunks, reset_collection
 from app.rag.rag_qa import ask as rag_ask
 from app.agents.research_agent import run_agent, run_full_pipeline
 
 
 def ingest_pdf(pdf_path: str):
-    pages = extract_pdf(Path(pdf_path))
-    chunks = chunk_pages(pages)
+    """Extract pages + TOC, chunk, reset collection, and add new chunks."""
+    pages, toc = extract_pdf(Path(pdf_path))
+    print(f"TOC entries found: {len(toc)}")  
+    chunks = chunk_pages(pages, toc)           # pass toc
+    reset_collection()                         # clear old collection
     add_chunks(chunks)
     print(f"Ingested {len(chunks)} chunks from {Path(pdf_path).name}")
 
@@ -22,9 +25,8 @@ def main():
         sys.exit(1)
 
     pdf_path = sys.argv[1]
-    mode = "rag"  # default
+    mode = "rag"
 
-    # Parse optional --mode argument
     if "--mode" in sys.argv:
         idx = sys.argv.index("--mode")
         if idx + 1 < len(sys.argv):
@@ -52,7 +54,7 @@ def main():
             print("\nPipeline result (JSON):")
             print(json.dumps(result, indent=2))
 
-        else:  # rag mode
+        else:
             answer = rag_ask(question)
             print("\n" + answer + "\n")
 

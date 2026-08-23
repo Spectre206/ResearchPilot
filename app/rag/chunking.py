@@ -2,67 +2,77 @@ import re
 from app.config import CHUNK_SIZE, CHUNK_OVERLAP
 
 
-def detect_section(text: str, current_section: str = "Unknown") -> str:
+def get_section_from_toc(page_number: int, toc: list[dict]) -> str:
     """
-    Very simple section detector.
-    Looks for common heading patterns:
-    - 1. Introduction
-    - 2 Related Work
-    - Abstract
-    - References
+    Return the section title based on the page number.
+    toc is a list of dicts with keys: level, title, page (0-indexed).
+    """
+    current_section = "Unknown"
+    for entry in toc:
+        if page_number >= entry["page"]:
+            current_section = entry["title"]
+        else:
+            break
+    return current_section
+
+
+def detect_section_heuristic(text: str, current_section: str) -> str:
+    """
+    Heuristic section detector using raw text with newlines.
     """
     lines = text.strip().splitlines()
-    for line in lines[:5]:
+    for line in lines:
         line = line.strip()
         if not line:
             continue
 
-        # Numbered section: "1.", "2.1"
+        # Roman numeral heading: "IV. AI-Native Components"
+        if re.match(r"^[IVXLCDM]+\.\s+\w+", line):
+            return line
+
+        # Decimal heading: "4.1 Anomaly Detection Engine"
         if re.match(r"^\d+(\.\d+)*\s+\w+", line):
             return line
 
-        # Common headings
-        if line.lower() in {
-            "abstract",
-            "introduction",
-            "related work",
-            "methodology",
-            "experiments",
-            "results",
-            "discussion",
-            "conclusion",
-            "references",
+        # Common unnumbered section names
+        lower = line.lower()
+        if lower in {
+            "abstract", "introduction", "related work",
+            "methodology", "experiments", "results",
+            "discussion", "conclusion", "references",
         }:
             return line
 
     return current_section
 
-
-def chunk_pages(pages: list[dict], chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[dict]:
+def chunk_pages(pages: list[dict], toc: list[dict] | None = None,
+                chunk_size: int = CHUNK_SIZE,
+                overlap: int = CHUNK_OVERLAP) -> list[dict]:
     chunks = []
     chunk_id = 0
     current_section = "Unknown"
 
     for page in pages:
         page_number = page["page"]
-        text = page["text"]
+        original_text = page["text"]
 
-        # Clean whitespace
-        text = re.sub(r"\s+", " ", text).strip()
-        if not text:
+        if not original_text.strip():
             continue
 
-        # Try to update section based on the page text
-        current_section = detect_section(text, current_section)
+        # ----- Section detection on original text (newlines preserved) -----
+        if toc:
+            current_section = get_section_from_toc(page_number, toc)
+        else:
+            current_section = detect_section_heuristic(original_text, current_section)
 
-        # Split into paragraphs
+        # ----- Clean text for chunking -----
+        text = re.sub(r"\s+", " ", original_text).strip()
+
+        # Split into paragraphs (simple: by sentence endings)
         paragraphs = [p.strip() for p in text.split(". ") if p.strip()]
 
         current_chunk = ""
-
         for para in paragraphs:
-            # If adding this paragraph exceeds the chunk size,
-            # save the current chunk and start a new one.
             if len(current_chunk) + len(para) + 2 > chunk_size:
                 if current_chunk:
                     chunks.append({
@@ -72,16 +82,12 @@ def chunk_pages(pages: list[dict], chunk_size: int = CHUNK_SIZE, overlap: int = 
                         "text": current_chunk.strip(),
                     })
                     chunk_id += 1
-
-                    # Overlap: keep the last part of the current chunk
                     if overlap > 0:
                         current_chunk = current_chunk[-overlap:]
                     else:
                         current_chunk = ""
-
             current_chunk += para + ". "
 
-        # Add the last chunk from this page
         if current_chunk.strip():
             chunks.append({
                 "chunk_id": f"chunk_{chunk_id:04d}",

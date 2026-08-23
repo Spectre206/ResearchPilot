@@ -40,3 +40,11 @@ def search(query: str, k: int = 5, collection_name: str = "papers") -> dict:
         include=["documents", "metadatas", "distances"],
     )
     return results
+
+def reset_collection(collection_name: str = "papers"):
+    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    try:
+        client.delete_collection(collection_name)
+        print(f"Collection '{collection_name}' deleted.")
+    except Exception:
+        print(f"Collection '{collection_name}' does not exist.")
