@@ -6,9 +6,10 @@ An **evidence-grounded AI research assistant** that combines **Retrieval-Augment
 
 ## ✨ Features
 
-- PDF ingestion with PyMuPDF
-- Paragraph‑aware chunking with section detection
+- PDF ingestion with PyMuPDF (native Markdown table extraction + layout parsing)
+- **Table-Aware & Font-Aware Chunking**: Preserves Markdown tables & numeric matrices intact with header-preservation across split table chunks; font-size and bold-weight heading detection
 - Boilerplate filtering to remove headers/footers
+
 - Embeddings via Ollama (`nomic-embed-text`)
 - Vector storage with ChromaDB (multi-paper collection support)
 - **Hybrid Retrieval**: Combines Dense Vector Search (cosine similarity) and Sparse Keyword Search (BM25Okapi) using Reciprocal Rank Fusion (RRF)
