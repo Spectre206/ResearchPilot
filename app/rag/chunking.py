@@ -16,12 +16,9 @@ def is_boilerplate(line: str) -> bool:
         r"JOURNAL OF INTERNATIONAL",
         r"ISSN:",
         r"VOL\s*\d+",
-        r"Yogesh Pugazhendhi",
-        r"Independent researcher",
-        r"Self-Healing AI-Native Real-Time Data Pipelines:",
-        r"Autonomous Resilience For Large-Scale Streaming Systems",
         r"^\d{1,3}$",   # page number only
     ]
+
 
     for pattern in boilerplate_patterns:
         if re.search(pattern, line, re.IGNORECASE):

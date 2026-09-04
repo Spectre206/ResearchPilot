@@ -109,21 +109,25 @@ def hybrid_search(
 
     # 2. Dense Vector Search
     fetch_k = min(len(doc_ids), max(k * 3, 20))
-    dense_results = collection.query(
-        query_texts=[query],
-        n_results=fetch_k,
-        include=["documents", "metadatas", "distances"],
-    )
-
     dense_ranks: Dict[str, int] = {}
     dense_distances: Dict[str, float] = {}
 
-    if dense_results and dense_results.get("ids") and len(dense_results["ids"]) > 0:
-        for rank, (chunk_id, dist) in enumerate(
-            zip(dense_results["ids"][0], dense_results["distances"][0]), start=1
-        ):
-            dense_ranks[chunk_id] = rank
-            dense_distances[chunk_id] = dist
+    try:
+        dense_results = collection.query(
+            query_texts=[query],
+            n_results=fetch_k,
+            include=["documents", "metadatas", "distances"],
+        )
+
+        if dense_results and dense_results.get("ids") and len(dense_results["ids"]) > 0:
+            for rank, (chunk_id, dist) in enumerate(
+                zip(dense_results["ids"][0], dense_results["distances"][0]), start=1
+            ):
+                dense_ranks[chunk_id] = rank
+                dense_distances[chunk_id] = dist
+    except Exception:
+        pass
+
 
     # 3. BM25 Keyword Search
     bm25 = BM25Okapi(documents)

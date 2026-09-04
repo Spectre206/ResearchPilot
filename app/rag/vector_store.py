@@ -14,10 +14,18 @@ def get_collection_name_for_paper(paper_id: str | None = None) -> str:
 def get_collection(collection_name: str = "papers"):
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
-    embedding_function = OllamaEmbeddingFunction(
-        model_name=EMBEDDING_MODEL_NAME,
-        url="http://localhost:11434/api/embeddings",
-    )
+    embedding_function = None
+    try:
+        ollama_ef = OllamaEmbeddingFunction(
+            model_name=EMBEDDING_MODEL_NAME,
+            url="http://localhost:11434/api/embeddings",
+        )
+        # Verify Ollama is reachable
+        ollama_ef(["test_ping"])
+        embedding_function = ollama_ef
+    except Exception:
+        from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+        embedding_function = DefaultEmbeddingFunction()
 
     collection = client.get_or_create_collection(
         name=collection_name,
@@ -25,6 +33,7 @@ def get_collection(collection_name: str = "papers"):
         metadata={"hnsw:space": "cosine"},
     )
     return collection
+
 
 
 def add_chunks(chunks: list[dict], collection_name: str = "papers"):

@@ -3,9 +3,10 @@ import json
 import uuid
 import sqlite3
 import functools
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Callable
 from app.config import SQLITE_DB_PATH, DATA_DIR
+
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -48,7 +49,7 @@ def log_trace(
     """Log a single execution trace to SQLite database."""
     init_trace_db()
     trace_id = str(uuid.uuid4())
-    now_iso = datetime.utcnow().isoformat() + "Z"
+    now_iso = datetime.now(timezone.utc).isoformat()
 
     def _sanitize(obj):
         try:

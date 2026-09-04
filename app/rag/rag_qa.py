@@ -2,16 +2,17 @@ from app.rag.hybrid_retrieval import hybrid_search
 from app.llm.client import generate
 from app.observability.tracing import trace_execution
 
-QA_SYSTEM_PROMPT = """You are a research assistant answering questions about an academic paper.
-Use ONLY the provided evidence chunks to answer.
-If the evidence does not contain the answer, say: "The paper does not provide enough evidence to answer this question."
-Always cite the evidence by including chunk IDs or page numbers.
+QA_SYSTEM_PROMPT = """You are an expert research assistant answering questions about an academic paper.
+Use the provided evidence chunks to provide a comprehensive, accurate, evidence-grounded answer.
+Always cite your evidence using page numbers and sections (e.g. [Page X | Section Y]).
+If the evidence does not directly answer the question, summarize what the provided passages state regarding the topic.
 
 Answer format:
 - Answer: ...
-- Evidence:
-  - [page X | section Y]: "..."
+- Evidence Citations:
+  - [Page X | Section Y]: "..."
 """
+
 
 
 def format_evidence(chunks) -> str:

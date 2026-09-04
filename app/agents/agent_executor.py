@@ -56,14 +56,36 @@ def run_agent(question: str, paper_id: str | None = None, max_turns: int = 6) ->
     tools = [SEARCH_TOOL_DEFINITION]
     steps: List[Dict[str, Any]] = []
 
+    current_model = GROQ_MODEL_NAME
     for turn in range(max_turns):
-        response = client.chat.completions.create(
-            model=GROQ_MODEL_NAME,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-            temperature=0.1,
-        )
+        try:
+            response = client.chat.completions.create(
+                model=current_model,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+                temperature=0.1,
+            )
+        except Exception as e:
+            err_str = str(e)
+            if "404" in err_str or "model_not_found" in err_str or "does not exist" in err_str:
+                try:
+                    models_resp = client.models.list()
+                    active = [m.id for m in models_resp.data if getattr(m, 'active', True)]
+                    fallback_priority = ["llama-3.1-8b-instant", "llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"]
+                    current_model = next((cand for cand in fallback_priority if cand in active), active[0] if active else "llama-3.1-8b-instant")
+                    response = client.chat.completions.create(
+                        model=current_model,
+                        messages=messages,
+                        tools=tools,
+                        tool_choice="auto",
+                        temperature=0.1,
+                    )
+                except Exception:
+                    raise e
+            else:
+                raise e
+
 
         response_message = response.choices[0].message
         messages.append(response_message)
