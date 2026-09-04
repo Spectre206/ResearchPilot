@@ -10,6 +10,7 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 CHROMA_DIR = DATA_DIR / "chroma"
+SQLITE_DB_PATH = DATA_DIR / "research_pilot.db"
 
 # LLM Provider: "ollama" or "groq"
 MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "groq")
@@ -20,7 +21,8 @@ EMBEDDING_MODEL_NAME = "nomic-embed-text"
 
 # Groq settings
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL_NAME = "openai/gpt-oss-20b"
+GROQ_MODEL_NAME = os.getenv("GROQ_MODEL_NAME", "llama-3.1-8b-instant")
+
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50

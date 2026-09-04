@@ -1,8 +1,8 @@
-from app.rag.vector_store import search
+from app.rag.hybrid_retrieval import hybrid_search
 
-def search_paper(query: str, k: int = 5) -> dict:
+def search_paper(query: str, k: int = 5, paper_id: str | None = None) -> dict:
     """
-    Tool: semantic search over the paper.
-    Returns ChromaDB query result.
+    Tool: hybrid search (dense vector + BM25 keyword matching) over the paper.
+    Returns ChromaDB-style query result with RRF scores.
     """
-    return search(query, k=k)
+    return hybrid_search(query=query, k=k, paper_id=paper_id)

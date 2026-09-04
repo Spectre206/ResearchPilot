@@ -85,6 +85,18 @@ def _generate_groq(prompt, model=None, system=None, format=None):
         except Exception as e:
             error_str = str(e)
 
+            # If model 404 / not found error occurs, dynamically query available models and retry
+            if "404" in error_str or "model_not_found" in error_str or "does not exist" in error_str:
+                try:
+                    models_resp = client.models.list()
+                    active = [m.id for m in models_resp.data if getattr(m, 'active', True)]
+                    fallback_priority = ["llama-3.1-8b-instant", "llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"]
+                    working_model = next((cand for cand in fallback_priority if cand in active), active[0] if active else "llama-3.1-8b-instant")
+                    kwargs["model"] = working_model
+                    continue
+                except Exception:
+                    pass
+
             # If JSON mode failed, retry without response_format
             if "json_validate_failed" in error_str and "response_format" in kwargs:
                 kwargs.pop("response_format", None)
@@ -98,6 +110,7 @@ def _generate_groq(prompt, model=None, system=None, format=None):
 
             if attempt == max_retries - 1:
                 raise e
+
 
             # Optional: small delay before retry
             # import time; time.sleep(0.5)
