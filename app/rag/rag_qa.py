@@ -1,4 +1,4 @@
-from app.rag.vector_store import search, get_collection_name_for_paper
+from app.rag.hybrid_retrieval import hybrid_search
 from app.llm.client import generate
 
 QA_SYSTEM_PROMPT = """You are a research assistant answering questions about an academic paper.
@@ -12,6 +12,7 @@ Answer format:
   - [page X | section Y]: "..."
 """
 
+
 def format_evidence(chunks) -> str:
     lines = []
     for idx, chunk in enumerate(chunks, start=1):
@@ -22,9 +23,9 @@ def format_evidence(chunks) -> str:
         )
     return "\n\n".join(lines)
 
+
 def ask(question: str, k: int = 8, paper_id: str | None = None) -> str:
-    collection_name = get_collection_name_for_paper(paper_id)
-    results = search(question, k=k, collection_name=collection_name)
+    results = hybrid_search(question, k=k, paper_id=paper_id)
     chunks = []
     if results and results.get("documents") and len(results["documents"]) > 0:
         for doc, meta, dist in zip(

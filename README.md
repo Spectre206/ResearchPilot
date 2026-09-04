@@ -10,13 +10,16 @@ An **evidence-grounded AI research assistant** that combines **Retrieval-Augment
 - Paragraph‑aware chunking with section detection
 - Boilerplate filtering to remove headers/footers
 - Embeddings via Ollama (`nomic-embed-text`)
-- Vector storage with ChromaDB
-- Semantic retrieval (cosine similarity)
-- Two answer modes:
-  - **RAG Mode** – simple retrieval + LLM
+- Vector storage with ChromaDB (multi-paper collection support)
+- **Hybrid Retrieval**: Combines Dense Vector Search (cosine similarity) and Sparse Keyword Search (BM25Okapi) using Reciprocal Rank Fusion (RRF)
+- Three answer modes:
+  - **RAG Mode** – simple hybrid retrieval + LLM
   - **Pipeline Mode** – multi‑agent workflow (Analyst → Evidence → Critic → Report)
+  - **Agent Mode** – native tool-calling agent using Groq function calling
+- FastAPI REST backend with SQLite paper metadata registry
 - Streamlit UI with dark theme and chat interface
 - Evaluation harness with baseline metrics
+
 
 ---
 
