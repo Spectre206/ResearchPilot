@@ -1,4 +1,4 @@
-from app.rag.vector_store import search
+from app.rag.vector_store import search, get_collection_name_for_paper
 from app.llm.client import generate
 
 QA_SYSTEM_PROMPT = """You are a research assistant answering questions about an academic paper.
@@ -22,19 +22,21 @@ def format_evidence(chunks) -> str:
         )
     return "\n\n".join(lines)
 
-def ask(question: str, k: int = 8) -> str:
-    results = search(question, k=k)
+def ask(question: str, k: int = 8, paper_id: str | None = None) -> str:
+    collection_name = get_collection_name_for_paper(paper_id)
+    results = search(question, k=k, collection_name=collection_name)
     chunks = []
-    for doc, meta, dist in zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        results["distances"][0],
-    ):
-        chunks.append({
-            "document": doc,
-            "metadata": meta,
-            "distance": dist,
-        })
+    if results and results.get("documents") and len(results["documents"]) > 0:
+        for doc, meta, dist in zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["distances"][0],
+        ):
+            chunks.append({
+                "document": doc,
+                "metadata": meta,
+                "distance": dist,
+            })
 
     evidence = format_evidence(chunks)
     prompt = f"""Question:

@@ -10,6 +10,7 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 CHROMA_DIR = DATA_DIR / "chroma"
+SQLITE_DB_PATH = DATA_DIR / "research_pilot.db"
 
 # LLM Provider: "ollama" or "groq"
 MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "groq")
