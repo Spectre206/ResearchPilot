@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from groq import Groq
 from app.config import GROQ_API_KEY, GROQ_MODEL_NAME
 from app.tools.retrieval import search_paper
+from app.observability.tracing import trace_execution
 
 AGENT_SYSTEM_PROMPT = """You are an evidence-grounded AI research assistant.
 You answer user questions about an academic paper by using the provided `search_paper` tool.
@@ -39,6 +40,7 @@ SEARCH_TOOL_DEFINITION = {
 }
 
 
+@trace_execution("run_agent")
 def run_agent(question: str, paper_id: str | None = None, max_turns: int = 6) -> Dict[str, Any]:
     """
     Synchronous Groq agent using native tool/function calling loop.

@@ -18,8 +18,10 @@ An **evidence-grounded AI research assistant** that combines **Retrieval-Augment
   - **Pipeline Mode** – multi‑agent workflow (Analyst → Evidence → Critic → Report)
   - **Agent Mode** – native tool-calling agent using Groq function calling
 - FastAPI REST backend with SQLite paper metadata registry
+- **Observability & Execution Tracing**: SQLite-backed trace logger (`@trace_execution` decorator, duration timing, input/output parameters, and `GET /traces` API endpoint)
 - Streamlit UI with dark theme and chat interface
 - Evaluation harness with baseline metrics
+
 
 
 ---

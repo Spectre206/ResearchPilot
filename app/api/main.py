@@ -12,12 +12,14 @@ from app.rag.ingestion import ingest_pdf_paper
 from app.rag.rag_qa import ask
 from app.agents.research_agent import run_full_pipeline
 from app.agents.agent_executor import run_agent
+from app.observability.tracing import get_recent_traces, init_trace_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
     init_db()
+    init_trace_db()
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     yield
     # Shutdown logic
@@ -139,3 +141,9 @@ def ask_agent(request: AgentAskRequest):
         "answer": agent_output.get("answer", ""),
         "steps": agent_output.get("steps", []),
     }
+
+
+@app.get("/traces", response_model=List[Dict[str, Any]])
+def get_traces(limit: int = 50):
+    return get_recent_traces(limit=limit)
+

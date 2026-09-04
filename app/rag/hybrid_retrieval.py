@@ -2,6 +2,7 @@ import math
 import re
 from typing import List, Dict, Any, Tuple
 from app.rag.vector_store import get_collection, get_collection_name_for_paper
+from app.observability.tracing import trace_execution
 
 
 class BM25Okapi:
@@ -63,6 +64,7 @@ class BM25Okapi:
         return scores
 
 
+@trace_execution("hybrid_search")
 def hybrid_search(
     query: str,
     k: int = 5,

@@ -1,5 +1,6 @@
 from app.rag.hybrid_retrieval import hybrid_search
 from app.llm.client import generate
+from app.observability.tracing import trace_execution
 
 QA_SYSTEM_PROMPT = """You are a research assistant answering questions about an academic paper.
 Use ONLY the provided evidence chunks to answer.
@@ -24,6 +25,7 @@ def format_evidence(chunks) -> str:
     return "\n\n".join(lines)
 
 
+@trace_execution("rag_ask")
 def ask(question: str, k: int = 8, paper_id: str | None = None) -> str:
     results = hybrid_search(question, k=k, paper_id=paper_id)
     chunks = []
