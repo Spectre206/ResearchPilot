@@ -1,14 +1,10 @@
-import streamlit as st
-from pathlib import Path
-import tempfile
+import os
+import requests
 from html import escape
+import streamlit as st
 import streamlit.components.v1 as components
 
-from app.rag.ingestion import extract_pdf
-from app.rag.chunking import chunk_pages
-from app.rag.vector_store import add_chunks, reset_collection
-from app.rag.rag_qa import ask as rag_ask
-from app.agents.research_agent import run_full_pipeline
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="ResearchPilot",
@@ -23,7 +19,6 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Import fonts */
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
 
     :root {
@@ -37,6 +32,8 @@ st.markdown(
         --amber-bg: #2A2116;
         --teal: #1C7A72;
         --teal-bg: #112B28;
+        --purple: #7C3AED;
+        --purple-bg: #211538;
         --caution-bg: #2A2116;
         --caution-text: #E0A45B;
     }
@@ -150,6 +147,7 @@ st.markdown(
     }
     .rp-card.accent-teal { border-left: 3px solid var(--teal); }
     .rp-card.accent-amber { border-left: 3px solid var(--amber); }
+    .rp-card.accent-purple { border-left: 3px solid var(--purple); }
 
     .rp-evidence-card {
         background: var(--teal-bg);
@@ -158,7 +156,14 @@ st.markdown(
         padding: 0.7rem 1rem;
         margin-bottom: 0.55rem;
     }
-    .rp-evidence-meta {
+    .rp-step-card {
+        background: var(--purple-bg);
+        border: 1px solid var(--purple);
+        border-radius: 9px;
+        padding: 0.7rem 1rem;
+        margin-bottom: 0.55rem;
+    }
+    .rp-meta {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.75rem;
         font-weight: 600;
@@ -167,19 +172,19 @@ st.markdown(
         letter-spacing: 0.05em;
         margin-bottom: 0.3rem;
     }
-    .rp-evidence-text {
+    .rp-meta-purple {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #C084FC;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.3rem;
+    }
+    .rp-text {
         font-size: 0.9rem;
         color: var(--text);
         line-height: 1.5;
-    }
-
-    .rp-note {
-        background: var(--caution-bg);
-        border: 1px solid var(--caution-text);
-        border-radius: 10px;
-        padding: 0.85rem 1.05rem;
-        font-size: 0.86rem;
-        color: var(--caution-text);
     }
 
     /* Mermaid container */
@@ -193,9 +198,6 @@ st.markdown(
         padding: 1.2rem 0.6rem;
         margin-bottom: 1rem;
     }
-    .mermaid {
-        text-align: center;
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -203,26 +205,54 @@ st.markdown(
 
 
 # ------------------------------
-# Helper functions
+# API Helper Functions
 # ------------------------------
-def ingest_pdf_file(uploaded_file):
-    """Save uploaded PDF temporarily, ingest it, and return chunk count."""
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(uploaded_file.getvalue())
-        tmp_path = Path(tmp_file.name)
-
+def fetch_papers():
+    """Fetch registered papers from backend API."""
     try:
-        pages, toc = extract_pdf(tmp_path)
-        chunks = chunk_pages(pages, toc)
-        reset_collection()
-        add_chunks(chunks)
-        return len(chunks)
-    finally:
-        tmp_path.unlink(missing_ok=True)
+        res = requests.get(f"{API_URL}/papers", timeout=5)
+        if res.status_code == 200:
+            return res.json()
+    except Exception:
+        pass
+    return []
+
+
+def upload_paper_api(uploaded_file):
+    """Upload PDF file to backend API."""
+    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
+    res = requests.post(f"{API_URL}/papers/upload", files=files, timeout=60)
+    if res.status_code == 201:
+        return res.json()
+    else:
+        st.error(f"Upload failed: {res.text}")
+        return None
+
+
+def ask_api(paper_id: str, question: str, mode: str):
+    """Query FastAPI backend using selected mode."""
+    if mode == "agent":
+        res = requests.post(
+            f"{API_URL}/ask-agent",
+            json={"paper_id": paper_id, "question": question},
+            timeout=120,
+        )
+    else:
+        res = requests.post(
+            f"{API_URL}/ask",
+            json={"paper_id": paper_id, "question": question, "mode": mode},
+            timeout=120,
+        )
+
+    if res.status_code == 200:
+        return res.json()
+    else:
+        st.error(f"Error ({res.status_code}): {res.text}")
+        return None
 
 
 def render_evidence(evidence):
-    """Render evidence items as cards."""
+    """Render evidence items as formatted cards."""
     for item in evidence:
         page = item.get("page", "?")
         section = item.get("section", "Unknown")
@@ -230,8 +260,28 @@ def render_evidence(evidence):
         st.markdown(
             f"""
             <div class="rp-evidence-card">
-                <div class="rp-evidence-meta">Page {escape(str(page))} &nbsp;·&nbsp; {escape(str(section))}</div>
-                <div class="rp-evidence-text">{escape(str(text))}</div>
+                <div class="rp-meta">Page {escape(str(page))} &nbsp;·&nbsp; {escape(str(section))}</div>
+                <div class="rp-text">{escape(str(text))}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_agent_steps(steps):
+    """Render agent tool-calling execution steps."""
+    for step in steps:
+        turn = step.get("turn", "?")
+        tool = step.get("tool", "")
+        args = step.get("args", {})
+        query = args.get("query", "")
+        results_count = step.get("results_count", 0)
+
+        st.markdown(
+            f"""
+            <div class="rp-step-card">
+                <div class="rp-meta-purple">Turn {turn} &nbsp;·&nbsp; Tool: <code>{escape(tool)}</code> &nbsp;·&nbsp; {results_count} chunks retrieved</div>
+                <div class="rp-text"><b>Query:</b> "{escape(query)}"</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -239,7 +289,7 @@ def render_evidence(evidence):
 
 
 def render_mermaid(mermaid_code: str, height: int = 500):
-    """Render a centered Mermaid diagram without scrollbars."""
+    """Render a centered Mermaid diagram."""
     components.html(
         f"""
         <div class="mermaid-wrapper" style="overflow: visible;">
@@ -286,9 +336,8 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-    st.markdown("**Navigate**")
     page = st.radio(
-        "Navigate",
+        "Navigation",
         ["Chat", "About"],
         label_visibility="collapsed",
         key="nav_radio",
@@ -299,8 +348,12 @@ with st.sidebar:
         st.markdown("**Answer Mode**")
         mode = st.radio(
             "Select mode",
-            ["rag", "pipeline"],
-            format_func=lambda x: "⚡ RAG (Fast)" if x == "rag" else "🛡️ Pipeline (Verified)",
+            ["rag", "pipeline", "agent"],
+            format_func=lambda x: {
+                "rag": "⚡ RAG (Fast)",
+                "pipeline": "🛡️ Pipeline (Verified)",
+                "agent": "🤖 Agent (Tool Calling)",
+            }[x],
             label_visibility="collapsed",
             key="mode_radio",
         )
@@ -312,69 +365,102 @@ with st.sidebar:
 # Chat Page
 # ------------------------------
 if page == "Chat":
-    st.title("Chat with Paper")
+    st.title("Chat with Research Papers")
 
-    uploaded_file = st.file_uploader("Upload a research paper (PDF)", type=["pdf"])
+    # Fetch available papers from backend
+    papers = fetch_papers()
 
-    if uploaded_file is not None:
-        is_new_file = (
-            "last_file_name" not in st.session_state
-            or st.session_state.last_file_name != uploaded_file.name
+    st.subheader("1. Select or Upload Paper")
+    paper_options = {p["id"]: f"{p['title']} ({p['filename']})" for p in papers}
+
+    selected_paper_id = None
+    if paper_options:
+        selected_paper_id = st.selectbox(
+            "Select registered paper:",
+            options=list(paper_options.keys()),
+            format_func=lambda x: paper_options[x],
+            key="paper_select",
         )
-        if is_new_file:
-            with st.spinner("Ingesting PDF..."):
-                chunk_count = ingest_pdf_file(uploaded_file)
-                st.session_state.last_file_name = uploaded_file.name
-                st.session_state.chunk_count = chunk_count
-                st.session_state.messages = []
-            st.success(f"Ingested {chunk_count} chunks from {uploaded_file.name}")
-        else:
-            st.info(f"Using already ingested PDF: {uploaded_file.name}")
+
+    with st.expander("➕ Upload a New Paper PDF"):
+        uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"], key="pdf_uploader")
+        if uploaded_file is not None:
+            if st.button("Ingest Paper"):
+                with st.spinner("Uploading and indexing paper via FastAPI backend..."):
+                    result = upload_paper_api(uploaded_file)
+                    if result:
+                        st.success(f"Ingested {result['chunk_count']} chunks from {result['filename']}")
+                        st.session_state.messages = []
+                        st.rerun()
+
+    if selected_paper_id:
+        active_paper = next((p for p in papers if p["id"] == selected_paper_id), None)
+        if active_paper:
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Chunks indexed", active_paper.get("chunk_count", 0))
+            c2.metric("Questions asked", len([m for m in st.session_state.get("messages", []) if m["role"] == "user"]))
+            c3.metric(
+                "Mode",
+                {"rag": "RAG", "pipeline": "Pipeline", "agent": "Agent"}[mode],
+            )
 
         st.session_state.setdefault("messages", [])
-        st.session_state.setdefault("chunk_count", 0)
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Chunks indexed", st.session_state.chunk_count)
-        c2.metric("Questions asked", len([m for m in st.session_state.messages if m["role"] == "user"]))
-        c3.metric("Mode", "RAG" if mode == "rag" else "Pipeline")
-
+        # Display history
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
                 if msg.get("evidence"):
                     with st.expander("📚 Evidence used"):
                         render_evidence(msg["evidence"])
+                if msg.get("steps"):
+                    with st.expander("🛠️ Agent Tool Calls"):
+                        render_agent_steps(msg["steps"])
 
-        question = st.chat_input("Ask a question about the paper…")
+        question = st.chat_input("Ask a question about the selected paper…")
         if question:
             st.session_state.messages.append({"role": "user", "content": question})
             with st.chat_message("user"):
                 st.markdown(question)
 
             with st.chat_message("assistant"):
-                evidence = None
-                with st.spinner("Generating answer..."):
+                with st.spinner(f"Generating answer using {mode.upper()} mode..."):
+                    api_resp = ask_api(selected_paper_id, question, mode)
+
+                if api_resp:
+                    answer = ""
+                    evidence = None
+                    steps = None
+
                     if mode == "rag":
-                        answer = rag_ask(question, k=8)
-                    else:
-                        result = run_full_pipeline(question)
-                        answer = result.get("answer", "No answer produced.")
-                        evidence = result.get("evidence", [])
+                        answer = api_resp.get("answer", "")
+                    elif mode == "pipeline":
+                        pipeline_res = api_resp.get("result", {})
+                        answer = pipeline_res.get("answer", "")
+                        evidence = pipeline_res.get("evidence", [])
+                    elif mode == "agent":
+                        answer = api_resp.get("answer", "")
+                        steps = api_resp.get("steps", [])
 
-                st.markdown(answer)
-                if evidence:
-                    with st.expander("📚 Evidence used"):
-                        render_evidence(evidence)
+                    st.markdown(answer)
 
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": answer,
-                "evidence": evidence,
-            })
+                    if evidence:
+                        with st.expander("📚 Evidence used"):
+                            render_evidence(evidence)
+
+                    if steps:
+                        with st.expander("🛠️ Agent Tool Calls"):
+                            render_agent_steps(steps)
+
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": answer,
+                        "evidence": evidence,
+                        "steps": steps,
+                    })
 
     else:
-        st.info("Please upload a PDF to start.")
+        st.info("No paper selected. Please select or upload a PDF paper above to get started.")
 
 
 # ------------------------------
@@ -386,14 +472,12 @@ elif page == "About":
     st.markdown(
         """
         <div class="rp-card">
-        ResearchPilot is an evidence-grounded AI research assistant that combines:
+        ResearchPilot is an evidence-grounded AI research assistant with FastAPI web backend supporting:
         <ul>
             <li><b>Retrieval-Augmented Generation (RAG)</b></li>
-            <li><b>Local/Cloud LLMs</b> (Ollama or Groq)</li>
-            <li><b>Multi-agent verification</b> (Analyst → Evidence → Critic → Report)</li>
+            <li><b>Multi-agent verification pipeline</b> (Analyst → Evidence → Critic → Report)</li>
+            <li><b>Native Tool-Calling Agent</b> via Groq function calling</li>
         </ul>
-        It processes academic PDFs, retrieves relevant passages, and produces answers
-        with explicit citations to the source document.
         </div>
         """,
         unsafe_allow_html=True,
@@ -401,94 +485,14 @@ elif page == "About":
 
     st.header("Architecture")
 
-    st.subheader("⚡ RAG Mode")
+    st.subheader("🤖 Native Tool-Calling Agent Mode")
     render_mermaid(
         """
 flowchart TD
-    A[PDF] --> B[Text Extraction]
-    B --> C[Chunking]
-    C --> D[Embeddings via Ollama]
-    D --> E[(ChromaDB)]
-    E --> F[Semantic Retrieval]
-    F --> G[LLM Answer]
-    G --> H[Final Response with Evidence]
+    A[User Question] --> B[Groq Agent Executor]
+    B -->|Tool Call: search_paper| C[ChromaDB Multi-Paper Collection]
+    C -->|Retrieved Chunks| B
+    B -->|Iterate until complete| D[Final Grounded Answer with Citations]
 """,
-        height=730,
-    )
-
-    st.subheader("🛡️ Pipeline Mode")
-    render_mermaid(
-        """
-flowchart TD
-    A[PDF] --> B[Text Extraction]
-    B --> C[Chunking]
-    C --> D[Embeddings via Ollama]
-    D --> E[(ChromaDB)]
-    E --> F[Question + Retrieval]
-    F --> G[Research Agent]
-    G --> H[Analyst Agent]
-    H --> I[Evidence Agent]
-    I --> J[Critic Agent]
-    J --> K[Report Agent]
-    K --> L[Final Structured Response]
-""",
-        height=1000,
-    )
-
-    st.header("Baseline Results")
-    st.markdown(
-        """
-        | Metric | RAG Mode | Pipeline Mode |
-        |--------|----------|---------------|
-        | Recall@5 | 1.00 | 1.00 |
-        | Precision@5 | 0.52 | 0.52 |
-        | MRR | 0.853 | 0.853 |
-        | Answer Score | 4.0 | 3.7 |
-
-        > The pipeline adds verification but may produce slightly lower scores because the
-        > critic sometimes removes valid details. Future tuning will improve this.
-        """
-    )
-
-    st.header("Mode Comparison")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(
-            """
-            <div class="rp-card accent-amber">
-                <b>⚡ RAG Mode</b><br><br>
-                Simple and fast. Retrieves top-k chunks and passes them to the LLM with a prompt
-                to answer and cite evidence. Good for quick fact‑checking.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            """
-            <div class="rp-card accent-teal">
-                <b>🛡️ Pipeline Mode</b><br><br>
-                Multi‑agent workflow:
-                <ol>
-                    <li>Initial retrieval based on the question.</li>
-                    <li>Analyst drafts an answer.</li>
-                    <li>Evidence Agent retrieves supporting passages for the draft.</li>
-                    <li>Critic reviews the answer against evidence.</li>
-                    <li>Report Agent produces a final structured report.</li>
-                </ol>
-                This adds verification and reduces hallucinations, but may be slower and
-                occasionally over‑filters valid information.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.header("Model Configuration")
-    st.markdown(
-        """
-        - **LLM Provider:** Groq (`openai/gpt-oss-20b`)
-        - **Embedding Model:** Ollama (`nomic-embed-text`)
-        - **Vector DB:** ChromaDB (persistent)
-        - **Paper:** Self-Healing.pdf
-        """
+        height=500,
     )

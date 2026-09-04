@@ -11,6 +11,7 @@ from app.db import init_db, list_papers, get_paper
 from app.rag.ingestion import ingest_pdf_paper
 from app.rag.rag_qa import ask
 from app.agents.research_agent import run_full_pipeline
+from app.agents.agent_executor import run_agent
 
 
 @asynccontextmanager
@@ -130,10 +131,11 @@ def ask_agent(request: AgentAskRequest):
             detail=f"Paper with ID '{request.paper_id}' not found.",
         )
 
+    agent_output = run_agent(request.question, paper_id=request.paper_id)
     return {
         "paper_id": request.paper_id,
         "question": request.question,
         "mode": "agent",
-        "status": "not_implemented",
-        "message": "Native tool-calling agent will be implemented in Phase 2.",
+        "answer": agent_output.get("answer", ""),
+        "steps": agent_output.get("steps", []),
     }

@@ -1,5 +1,6 @@
 import unittest
 import uuid
+from unittest.mock import patch
 from pathlib import Path
 from fastapi.testclient import TestClient
 
@@ -69,7 +70,13 @@ class TestPhase1(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_api_ask_agent_stub(self):
+    @patch("app.api.main.run_agent")
+    def test_api_ask_agent(self, mock_run_agent):
+        mock_run_agent.return_value = {
+            "answer": "Test answer",
+            "steps": [],
+        }
+
         # Register dummy paper first
         dummy_id = str(uuid.uuid4())
         register_paper(dummy_id, "dummy.pdf", "Dummy", 5)
@@ -84,7 +91,8 @@ class TestPhase1(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["mode"], "agent")
-        self.assertEqual(data["status"], "not_implemented")
+        self.assertIn("answer", data)
+        self.assertIn("steps", data)
 
 
 if __name__ == "__main__":
